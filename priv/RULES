@@ -1,0 +1,39 @@
+xmonad(M, X, Z): symbol(M, xmonad(X, Z)).
+ymonad(M, Y, Z): symbol(M, ymonad(Y, Z)).
+dyad(D, X, Y, Z): symbol(D, dyad(X, Y, Z)).
+
+xmonad(yapply(A, B), X, Z):
+  ymonad(A, dyad(X1, Y1, Z1), xmonad(X, Z)),
+  dyad(B, X1, Y1, Z1).
+
+xmonad(yapply(A, B), X, Z):
+  ymonad(A, xmonad(X1, Z1), xmonad(X, Z)),
+  xmonad(B, X1, Z1).
+
+xmonad(fork(A, B, C), X, Z):
+  xmonad(A, X, X1),
+  dyad(B, X1, Y1, Z),
+  xmonad(C, X, Y1).
+
+xmonad(ypartial(A, B), X, Z):
+  dyad(A, X, Y, Z),
+  xmonad(B, X, Y).
+
+xseq(seq{A,B}, X, Z):
+  xseq(A, X, Y),
+  xseq(B, Y, Z).
+
+xseq(A, X, Z):
+  xmonad(A, X, Z).
+
+dyad(xapply(B, A), X, Y, Z):
+  dyad(A, X1, Y1, Z1),
+  xmonad(B, dyad(X1,Y1,Z1), dyad(X,Y,Z)).
+
+dyad(yapply(A, B), X, Y, Z):
+  ymonad(A, dyad(X1, Y, Z1), dyad(X, Y, Z)),
+  dyad(B, X1, Y, Z1).
+
+root(T, xseq(X, Z)):
+  xseq(T, X, Z),
+  eof.
