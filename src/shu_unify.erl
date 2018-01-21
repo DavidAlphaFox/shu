@@ -25,9 +25,9 @@ subst({var, V}, S) ->
         Other ->
             subst(Other, S)
     end;
-subst({term, F, A}, S) when is_atom(F) ->
+subst({term, F, A}, S) when is_atom(F); is_integer(F) ->
     {term, F, subst(A, S)};
-subst({tuple, F, A}, S) when is_atom(F) ->
+subst({tuple, F, A}, S) when is_atom(F); is_integer(F) ->
     {tuple, F,
      [ E || T <- subst(A, S),
             E <- case T of
@@ -39,8 +39,8 @@ subst([], _S) ->
     [];
 subst([H|T], S) ->
     [subst(H,S)|subst(T,S)];
-subst(Atom, _) when is_atom(Atom) ->
-    Atom.
+subst(X, _) when is_atom(X); is_integer(X) ->
+    X.
 
 occurs(X, {var, V}, S) ->
     case lookup_var(V, S) of
@@ -91,7 +91,7 @@ unify([H1|T1], [H2|T2], S) ->
     	S1 ->
     	    unify(T1, T2, S1)
     end;
-unify(A, A, S) when is_atom(A) ->
+unify(X, X, S) when is_atom(X); is_integer(X) ->
     S;
 unify(_, _, _) ->
     false.
@@ -195,6 +195,8 @@ occurs_test_() ->
 unify_test_() ->
     [?_assertEqual(false, unify(a,b,[])),
      ?_assertEqual([], unify(a,a,[])),
+     ?_assertEqual(false, unify(1,2,[])),
+     ?_assertEqual([], unify(1,1,[])),
      ?_assertEqual([{x,a}], unify({var, x},a,[])),
      ?_assertEqual([{x,a}], unify(a,{var, x},[])),
      ?_assertEqual(false, unify({var, x},b,[{x,a}])),

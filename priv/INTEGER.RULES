@@ -1,0 +1,83 @@
+0: symbol(0, 0).
+z: symbol(0, z).
+p: symbol(0, p).
+
+fe(multi(A,N), N): symbol(A, d), symbol(N, e).
+
+f1(A, true):  symbol(A, d).
+f1(A, false): symbol(A, d).
+
+f2(A, true):      fe(A, 10), z.
+f2(A, false):     fe(A, 10).
+f2(plus(A,B), Z): fe(A, 10),    f1(B, Z).
+
+f3(A, true):      fe(A, 100), z.
+f3(A, false):     fe(A, 100).
+f3(plus(A,B), Z): fe(A, 100),    f2(B, Z).
+f3(plus(A,B), Z): fe(A, 100), p, f1(B, Z).
+
+f4(A, true):      fe(A, 1000), z.
+f4(A, false):     fe(A, 1000).
+f4(plus(A,B), Z): fe(A, 1000),    f3(B, Z).
+f4(plus(A,B), Z): fe(A, 1000), p, f2(B, Z).
+f4(plus(A,B), Z): fe(A, 1000), p, f1(B, Z).
+
+f(A, Z): f1(A, Z).
+f(A, Z): f2(A, Z).
+f(A, Z): f3(A, Z).
+f(A, Z): f4(A, Z).
+
+u(A, Z):    f4(A, Z).
+u(A, Z): p, f3(A, Z).
+u(A, Z): p, f2(A, Z).
+u(A, Z): p, f1(A, Z).
+
+ge(multi(A, 10000)): f(A, false), symbol(10000, e).
+ve(multi(A, 10000)): u(A, false), symbol(10000, e).
+
+g(A, Z):                f(A, Z).
+g(plus(A,B), Z): ge(A), u(B, Z).
+g(A, true):      ge(A), z.
+g(A, false):     ge(A).
+
+v(A, Z):            p,  f(A, Z).
+v(plus(A,B), Z): ve(A), u(B, Z).
+v(A, true):      ve(A), z.
+v(A, false):     ve(A).
+
+he(multi(A, N), N): g(A, false), symbol(N, e).
+we(multi(A, N), N): v(A, false), symbol(N, e).
+
+h1(A, Z):                    g(A, Z).
+h1(plus(A,B), Z):  h2(A),    v(B, Z).
+h1(plus(A,B), Z):  w2(A), p, g(B, Z).
+
+w1(A): h2(A).
+w1(A): w2(A).
+
+h2(A):                   he(A, 100000000).
+h2(plus(A,B)): h3(A),    we(B, 100000000).
+h2(plus(A,B)): w3(A), p, he(B, 100000000).
+
+w2(A): h3(A).
+w2(A): w3(A).
+
+h3(A):                   he(A, 10000000000000000).
+h3(plus(A,B)): h4(A),    we(B, 10000000000000000).
+h3(plus(A,B)): w4(A), p, he(B, 10000000000000000).
+
+w3(A): h4(A).
+w3(A): w4(A).
+
+h(A, Z):     h1(A, Z).
+h(A, true):  w1(A), z.
+h(A, false): w1(A).
+
+
+int(0,true):  0.
+int(0,false): 0.
+int(A,Z): h(A,Z).
+
+root(X):
+  int(X, true),
+  eof.

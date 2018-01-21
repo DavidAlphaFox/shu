@@ -22,6 +22,10 @@ tokens(<<$., Bin/binary>>) ->
 tokens(<<$:, Bin/binary>>) ->
     [':'|tokens(Bin)];
 tokens(<<C, Bin/binary>>)
+  when $0 =< C, C =< $9 ->
+    {I, Bin1} = integer(C - $0, Bin),
+    [{integer, I}|tokens(Bin1)];
+tokens(<<C, Bin/binary>>)
   when $a =< C, C =< $z ->
     {A, Bin1} = name(C, Bin),
     [{atom, A}|tokens(Bin1)];
@@ -54,6 +58,13 @@ name(Bin) ->
     {[], Bin}.
 
 
+integer(A, <<C, Bin/binary>>)
+  when $0 =< C, C =< $9 ->
+    integer(A * 10 + C - $0, Bin);
+integer(A, Bin) ->
+    {A, Bin}.
+
+
 literal(C, Bin) ->
     {S, Bin1} = literal(Bin),
     {[C|S], Bin1}.
@@ -78,6 +89,8 @@ term([{atom, A}, '('|List]) ->
     {{term, A, Terms}, List1};
 term([{atom, A}|List]) ->
     {A, List};
+term([{integer, I}|List]) ->
+    {I, List};
 term([{var, _} = V|List]) ->
     {V, List};
 term([{ignore, _} = I|List]) ->
@@ -103,12 +116,13 @@ tokens_test_() ->
 
     [?_assertEqual([], Tokens(" \n\n")),
      ?_assertEqual([{literal, "多少"}], Tokens("多少")),
+     ?_assertEqual([{integer, 123}], Tokens("123")),
      ?_assertEqual(['(',')',',','.',':'], Tokens("(),.:")),
      ?_assertEqual([{atom, atom}, {var, 'Var'}, {ignore, '_Ignore'}], Tokens("atom Var _Ignore"))
     ].
 
 parse_test_() ->
     Parse = fun(X) -> parse(unicode:characters_to_binary(X)) end,
-    [?_assertEqual([{"多少", [x, {term, t, [{var, 'V'}, {ignore, '_'}]}]}], Parse("多少 symbol(x, t(V,_))"))].
+    [?_assertEqual([{"多少", [x, {term, t, [{var, 'V'}, {ignore, '_'}]}, 123]}], Parse("多少 symbol(x, t(V,_), 123)"))].
 
 -endif.

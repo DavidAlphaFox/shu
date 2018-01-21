@@ -3,27 +3,31 @@
 -export(
    [rules/0, rules/1,
     symbols/0, symbols/1,
-    parse/3,
+    parse/4,
     format/1]).
 
 
 term_to_list({term, F, A}) ->
     [F|A];
 term_to_list(Atom) when is_atom(Atom) ->
-    [Atom].
+    [Atom];
+term_to_list(Int) when is_integer(Int) ->
+    [Int].
 
-pred_name(F, A) ->
-    list_to_atom(atom_to_list(F) ++ "/" ++ integer_to_list(length(A))).
+pred_name(F, A) when is_atom(F) ->
+    list_to_atom(atom_to_list(F) ++ "/" ++ integer_to_list(length(A)));
+pred_name(F, A) when is_integer(F) ->
+    list_to_atom(integer_to_list(F) ++ "/" ++ integer_to_list(length(A))).
 
 term_to_query(Term) ->
     [F|A] = term_to_list(Term),
     {pred_name(F,A), A}.
 
 rules() ->
-    rules(filename:join(code:priv_dir(shu), "RULES")).
+    rules("RULES").
 
 rules(Filename) ->
-    {ok, Bin} = file:read_file(Filename),
+    {ok, Bin} = file:read_file(filename:join(code:priv_dir(shu), Filename)),
 
     lists:foldl(
       fun ({clause, Head, Body}, Map) ->
@@ -41,10 +45,10 @@ rules(Filename) ->
       shu_rule_parser:parse(Bin)).
 
 symbols() ->
-    symbols(filename:join(code:priv_dir(shu), "SYMBOLS")).
+    symbols("SYMBOLS").
 
 symbols(Filename) ->
-    {ok, Bin} = file:read_file(Filename),
+    {ok, Bin} = file:read_file(filename:join(code:priv_dir(shu), Filename)),
     Symbols =
         [ {K, shu_unify:alpha(V)}
           || {K,V} <- shu_symbol_parser:parse(Bin)],
@@ -117,10 +121,10 @@ parse(I, [H|T], Chart, Tables, Symbols) ->
 
     parse(I+1, T, Chart1, Tables3, Symbols).
 
-parse(List, Grammar, Symbols) ->
-    Root = 'root/2',
+parse(List, {F,A}, Grammar, Symbols) ->
+    Root = list_to_atom(atom_to_list(F) ++ "/" ++ integer_to_list(A)),
     #{results := Results} = parse(0, List, shu_chart:new(Root, Grammar), [], Symbols),
-    [ {term, root, Term} || {Term, _} <- maps:get(Root, maps:get(0, Results, #{}), [])].
+    [ {term, F, Term} || {Term, _} <- maps:get(Root, maps:get(0, Results, #{}), [])].
 
 
 format({tuple, Name, List}) ->
