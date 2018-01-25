@@ -42,7 +42,7 @@ rules(Filename) ->
               maps:put(Key, Value, Map)
       end,
       #{},
-      shu_rule_parser:parse(Bin)).
+      shu_rule_parser:parse_rules(Bin)).
 
 symbols() ->
     symbols("SYMBOLS").
@@ -51,7 +51,7 @@ symbols(Filename) ->
     {ok, Bin} = file:read_file(filename:join(code:priv_dir(shu), Filename)),
     Symbols =
         [ {K, shu_unify:alpha(V)}
-          || {K,V} <- shu_symbol_parser:parse(Bin)],
+          || {K,V} <- shu_rule_parser:parse_symbols(Bin)],
     shu_trie:from_list(Symbols).
 
 

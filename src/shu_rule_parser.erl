@@ -1,10 +1,14 @@
 -module(shu_rule_parser).
 
--export([parse/1]).
+-export([parse_rules/1, parse_symbols/1]).
 
-parse(Bin) ->
+parse_rules(Bin) ->
     Tokens = tokens(Bin),
     rules(Tokens).
+
+parse_symbols(Bin) ->
+    Tokens = tokens(Bin),
+    symbols(Tokens).
 
 tokens(<<>>) ->
     [];
@@ -40,7 +44,12 @@ tokens(<<C, Bin/binary>>)
 tokens(<<C, Bin/binary>>)
   when $_ =:= C ->
     {A, Bin1} = name(C, Bin),
-    [{ignore, A}|tokens(Bin1)].
+    [{ignore, A}|tokens(Bin1)];
+tokens(<<C/utf8, Bin/binary>>)
+  when 128 =< C ->
+    {A, Bin1} = literal(C, Bin),
+    [{literal, A}|tokens(Bin1)].
+
 
 
 name(C, Bin) ->
@@ -65,6 +74,18 @@ integer(A, Bin) ->
     {A, Bin}.
 
 
+literal(C, Bin) ->
+    {S, Bin1} = literal(Bin),
+    {[C|S], Bin1}.
+
+literal(<<C/utf8, Bin/binary>>)
+  when 128 =< C ->
+    {S, Bin1} = literal(Bin),
+    {[C|S], Bin1};
+literal(Bin) ->
+    {[], Bin}.
+
+
 rules([]) ->
     [];
 rules(List) ->
@@ -85,6 +106,13 @@ rule(List) ->
     end,
     {Body, List2} = terms('.', List1),
     {{clause, Head, Body}, List2}.
+
+
+symbols([]) ->
+    [];
+symbols([{literal, L}|List]) ->
+    {{term, symbol, Symbol}, List1}= term(List),
+    [{L, Symbol}|symbols(List1)].
 
 
 term([{atom, A}, '{'|List]) ->
@@ -127,9 +155,13 @@ tokens_test_() ->
      ?_assertEqual([{atom, atom}, {var, 'Var'}, {ignore, '_Ignore'}, {integer, 123}], Tokens("atom Var _Ignore 123"))
     ].
 
-parse_test_() ->
-    Parse = fun(X) -> parse(unicode:characters_to_binary(X)) end,
+parse_rules_test_() ->
+    Parse = fun(X) -> parse_rules(unicode:characters_to_binary(X)) end,
     [?_assertEqual([{clause, {term,a,[{var,'X'}]}, [{term,b,[{var,'X'},{ignore,'_'},123]}]}], Parse("a(X) : b(X,_,123).")),
      ?_assertEqual([{clause, {term,a,[{tuple, a, [a,{var,'X'}]}]}, [{term,b,[{var,'X'}]}]}], Parse("a(a{a,X}) : b(X)."))].
+
+parse_symbols_test_() ->
+    Parse = fun(X) -> parse_symbols(unicode:characters_to_binary(X)) end,
+    [?_assertEqual([{"多少", [x, {term, t, [{var, 'V'}, {ignore, '_'}]}, 123]}], Parse("多少 symbol(x, t(V,_), 123)"))].
 
 -endif.
