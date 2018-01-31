@@ -121,11 +121,16 @@ term([{atom, A}, '{'|List]) ->
 term([{atom, A}, '('|List]) ->
     {Terms, List1} = terms(')', List),
     {{term, A, Terms}, List1};
-term([{integer, I}, '('|List]) ->
+term([{literal, A}, '{'|List]) ->
+    {Terms, List1} = terms('}', List),
+    {{tuple, list_to_atom(A), Terms}, List1};
+term([{literal, A}, '('|List]) ->
     {Terms, List1} = terms(')', List),
-    {{term, I, Terms}, List1};
+    {{term, list_to_atom(A), Terms}, List1};
 term([{atom, A}|List]) ->
     {A, List};
+term([{literal, A}|List]) ->
+    {list_to_atom(A), List};
 term([{integer, I}|List]) ->
     {I, List};
 term([{var, _} = V|List]) ->

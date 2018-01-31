@@ -49,7 +49,8 @@ symbols(Filename) ->
     {ok, Bin} = file:read_file(filename:join(code:priv_dir(shu), Filename)),
     Symbols =
         [ begin
-              {{term, F, A}, C} = shu_unify:alpha(V),
+              {T, C} = shu_unify:alpha(V),
+              [F|A] = term_to_list(T),
               {K, {{F, length(A)}, {A, C}}}
           end
           || {K,V} <- shu_rule_parser:parse_symbols(Bin)],
