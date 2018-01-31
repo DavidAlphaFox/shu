@@ -14,10 +14,8 @@ term_to_list(Atom) when is_atom(Atom) ->
 term_to_list(Int) when is_integer(Int) ->
     [Int].
 
-pred_name(F, A) when is_atom(F) ->
-    list_to_atom(atom_to_list(F) ++ "/" ++ integer_to_list(length(A)));
-pred_name(F, A) when is_integer(F) ->
-    list_to_atom(integer_to_list(F) ++ "/" ++ integer_to_list(length(A))).
+pred_name(F, A) ->
+    {F, length(A)}.
 
 term_to_query(Term) ->
     [F|A] = term_to_list(Term),
@@ -57,7 +55,7 @@ symbols(Filename) ->
 
 
 add_table(I, #{states := States}, Table, Symbols) ->
-    case maps:is_key('symbol/2', maps:get(I, States, #{})) of
+    case maps:is_key({symbol, 2}, maps:get(I, States, #{})) of
         true ->
             [{I,Symbols}|Table];
         false ->
@@ -92,7 +90,7 @@ complete(Chart = #{states := States}, I, Name, N, {Entry, Count}) ->
 
 
 parse(I, [], Chart, _Tables, _Symbols) ->
-    complete(Chart, I, 'eof/0', I, {[], 0});
+    complete(Chart, I, {eof, 0}, I, {[], 0});
 parse(I, [H|T], Chart, Tables, Symbols) ->
     Tables1 = add_table(I, Chart, Tables, Symbols),
 
@@ -109,7 +107,7 @@ parse(I, [H|T], Chart, Tables, Symbols) ->
     Chart1 =
         lists:foldl(
           fun ({N, Entry}, C) ->
-                  complete(C, I, 'symbol/2', N, Entry)
+                  complete(C, I, {symbol, 2}, N, Entry)
           end,
           Chart,
           Entries),
@@ -121,8 +119,7 @@ parse(I, [H|T], Chart, Tables, Symbols) ->
 
     parse(I+1, T, Chart1, Tables3, Symbols).
 
-parse(List, {F,A}, Grammar, Symbols) ->
-    Root = list_to_atom(atom_to_list(F) ++ "/" ++ integer_to_list(A)),
+parse(List, {F,_} = Root, Grammar, Symbols) ->
     #{results := Results} = parse(0, List, shu_chart:new(Root, Grammar), [], Symbols),
     [ {term, F, Term} || {Term, _} <- maps:get(Root, maps:get(0, Results, #{}), [])].
 
