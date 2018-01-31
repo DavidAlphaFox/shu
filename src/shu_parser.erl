@@ -48,19 +48,12 @@ symbols() ->
 symbols(Filename) ->
     {ok, Bin} = file:read_file(filename:join(code:priv_dir(shu), Filename)),
     Symbols =
-        [ {K, shu_unify:alpha(V)}
+        [ begin
+              {{term, F, A}, C} = shu_unify:alpha(V),
+              {K, {{F, length(A)}, {A, C}}}
+          end
           || {K,V} <- shu_rule_parser:parse_symbols(Bin)],
     shu_trie:from_list(Symbols).
-
-
-
-add_table(I, #{states := States}, Table, Symbols) ->
-    case maps:is_key({symbol, 2}, maps:get(I, States, #{})) of
-        true ->
-            [{I,Symbols}|Table];
-        false ->
-            Table
-    end.
 
 
 complete(Chart = #{states := States}, I, Name, N, {Entry, Count}) ->
@@ -92,7 +85,7 @@ complete(Chart = #{states := States}, I, Name, N, {Entry, Count}) ->
 parse(I, [], Chart, _Tables, _Symbols) ->
     complete(Chart, I, {eof, 0}, I, {[], 0});
 parse(I, [H|T], Chart, Tables, Symbols) ->
-    Tables1 = add_table(I, Chart, Tables, Symbols),
+    Tables1 = [{I, Symbols}|Tables],
 
     Tables2 =
         [ {N,maps:get(H,Table)}
@@ -106,8 +99,8 @@ parse(I, [H|T], Chart, Tables, Symbols) ->
 
     Chart1 =
         lists:foldl(
-          fun ({N, Entry}, C) ->
-                  complete(C, I, {symbol, 2}, N, Entry)
+          fun ({N, {Name,Entry}}, C) ->
+                  complete(C, I, Name, N, Entry)
           end,
           Chart,
           Entries),

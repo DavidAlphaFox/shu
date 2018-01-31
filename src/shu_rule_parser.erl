@@ -111,7 +111,7 @@ rule(List) ->
 symbols([]) ->
     [];
 symbols([{literal, L}|List]) ->
-    {{term, symbol, Symbol}, List1}= term(List),
+    {Symbol, List1}= term(List),
     [{L, Symbol}|symbols(List1)].
 
 
@@ -162,6 +162,6 @@ parse_rules_test_() ->
 
 parse_symbols_test_() ->
     Parse = fun(X) -> parse_symbols(unicode:characters_to_binary(X)) end,
-    [?_assertEqual([{"多少", [x, {term, t, [{var, 'V'}, {ignore, '_'}]}, 123]}], Parse("多少 symbol(x, t(V,_), 123)"))].
+    [?_assertEqual([{"多少", {term, symbol, [x, {term, t, [{var, 'V'}, {ignore, '_'}]}, 123]}}], Parse("多少 symbol(x, t(V,_), 123)"))].
 
 -endif.
