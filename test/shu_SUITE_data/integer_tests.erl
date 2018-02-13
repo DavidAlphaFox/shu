@@ -1,8 +1,8 @@
 -module(integer_tests).
 
-eval({term, multi, [A,B]}) ->
+eval({term, '乘', [A,B]}) ->
     eval(A) * eval(B);
-eval({term, plus, [A,B]}) ->
+eval({term, '加', [A,B]}) ->
     eval(A) + eval(B);
 eval(X) when is_integer(X) ->
     X.
