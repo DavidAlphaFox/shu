@@ -57,34 +57,8 @@ symbols(Filename) ->
     shu_trie:from_list(Symbols).
 
 
-complete(Chart = #{states := States}, I, Name, N, {Entry, Count}) ->
-    lists:foldl(
-      fun ({A, Body, S, Next, I1, Head = {F1,A1}}, C) ->
-              Next1 = Next + Count,
-              case shu_unify:unify(A, shu_unify:offset(Entry, Next), S) of
-                  false ->
-                      C;
-                  S1 ->
-                      case Body of
-                          [] ->
-                              A2 = shu_unify:alpha(shu_unify:subst(A1, S1)),
-                              case shu_chart:add_result(C, I1, F1, A2) of
-                                  {ok, C1} ->
-                                      complete(C1, I, F1, I1, A2);
-                                  {existed, C1} ->
-                                      C1
-                              end;
-                          [{F2,A2}|Body1] ->
-                              shu_chart:add_state(C, I+1, F2, {A2, Body1, S1, Next1, I1, Head})
-                      end
-              end
-      end,
-      Chart,
-      maps:get(Name, maps:get(N, States, #{}), [])).
-
-
 parse(I, [], Chart, _Tables, _Symbols) ->
-    complete(Chart, I, {eof, 0}, I, {[], 0});
+    shu_chart:complete(Chart, I, {eof, 0}, I, {[], 0});
 parse(I, [H|T], Chart, Tables, Symbols) ->
     Tables1 = [{I, Symbols}|Tables],
 
@@ -101,7 +75,7 @@ parse(I, [H|T], Chart, Tables, Symbols) ->
     Chart1 =
         lists:foldl(
           fun ({N, {Name,Entry}}, C) ->
-                  complete(C, I, Name, N, Entry)
+                  shu_chart:complete(C, I, Name, N, Entry)
           end,
           Chart,
           Entries),

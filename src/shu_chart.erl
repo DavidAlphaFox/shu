@@ -1,6 +1,6 @@
 -module(shu_chart).
 
--export([new/2, add_state/4, add_result/4]).
+-export([new/2, complete/5]).
 
 
 new(Root, Grammar) ->
@@ -54,3 +54,29 @@ predict(I, Name, States, Grammar) ->
           error -> [];
           {ok, Rules} -> Rules
       end).
+
+
+complete(Chart = #{states := States}, I, Name, N, {Entry, Count}) ->
+    lists:foldl(
+      fun ({A, Body, S, Next, I1, Head = {F1,A1}}, C) ->
+              Next1 = Next + Count,
+              case shu_unify:unify(A, shu_unify:offset(Entry, Next), S) of
+                  false ->
+                      C;
+                  S1 ->
+                      case Body of
+                          [] ->
+                              A2 = shu_unify:alpha(shu_unify:subst(A1, S1)),
+                              case add_result(C, I1, F1, A2) of
+                                  {ok, C1} ->
+                                      complete(C1, I, F1, I1, A2);
+                                  {existed, C1} ->
+                                      C1
+                              end;
+                          [{F2,A2}|Body1] ->
+                              add_state(C, I+1, F2, {A2, Body1, S1, Next1, I1, Head})
+                      end
+              end
+      end,
+      Chart,
+      maps:get(Name, maps:get(N, States, #{}), [])).
