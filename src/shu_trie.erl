@@ -1,15 +1,6 @@
 -module(shu_trie).
 
--export([from_list/1]).
-
-
-from_list(List) ->
-    lists:foldl(
-      fun ({K,V}, T) ->
-              add(K,V,T)
-      end,
-      #{},
-      List).
+-export([add/3]).
 
 
 add([], Value, Trie) ->
@@ -21,7 +12,7 @@ add([H|T], Value, Trie) ->
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
-from_list_test() ->
-    ?assertEqual(#{$多 => #{$少 => #{[] => [1]}}}, from_list([{"多少", 1}])).
+add_test() ->
+    ?assertEqual(#{$多 => #{$少 => #{[] => [1]}}}, add("多少", 1, #{})).
 
 -endif.

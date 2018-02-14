@@ -1,8 +1,8 @@
 -module(shu_parser).
 
 -export(
-   [rules/0, rules/1,
-    symbols/0, symbols/1,
+   [add_rules/2,
+    add_symbols/2,
     parse/4,
     format/1]).
 
@@ -21,12 +21,11 @@ term_to_query(Term) ->
     [F|A] = term_to_list(Term),
     {pred_name(F,A), A}.
 
-rules() ->
-    rules("RULES").
 
-rules(Filename) ->
+add_rules({file, Filename}, Rules) ->
     {ok, Bin} = file:read_file(filename:join(code:priv_dir(shu), Filename)),
-
+    add_rules(Bin, Rules);
+add_rules(Bin, Rules) ->
     lists:foldl(
       fun ({clause, Head, Body}, Map) ->
               [F|A] = term_to_list(Head),
@@ -39,22 +38,22 @@ rules(Filename) ->
                    ),
               maps:put(Key, Value, Map)
       end,
-      #{},
+      Rules,
       shu_rule_parser:parse_rules(Bin)).
 
-symbols() ->
-    symbols("SYMBOLS").
 
-symbols(Filename) ->
+add_symbols({file, Filename}, Symbols) ->
     {ok, Bin} = file:read_file(filename:join(code:priv_dir(shu), Filename)),
-    Symbols =
-        [ begin
+    add_symbols(Bin, Symbols);
+add_symbols(Bin, Symbols) ->
+    lists:foldl(
+      fun ({K,V}, Trie) ->
               {T, C} = shu_unify:alpha(V),
               [F|A] = term_to_list(T),
-              {K, {{F, length(A)}, {A, C}}}
-          end
-          || {K,V} <- shu_rule_parser:parse_symbols(Bin)],
-    shu_trie:from_list(Symbols).
+              shu_trie:add(K, {{F, length(A)}, {A, C}}, Trie)
+      end,
+      Symbols,
+      shu_rule_parser:parse_symbols(Bin)).
 
 
 parse(I, [], Chart, _Tables, _Symbols) ->

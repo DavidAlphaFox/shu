@@ -12,8 +12,19 @@ eval(X) when is_integer(X) ->
 -include_lib("eunit/include/eunit.hrl").
 
 integer_test_() ->
-    Symbols = shu_parser:symbols("INTEGER.SYMBOLS"),
-    Rules = shu_parser:rules("INTEGER.RULES"),
+    Symbols =
+        lists:foldl(
+          fun shu_parser:add_symbols/2,
+          #{},
+          [{file, "INTEGER.SYMBOLS"}]),
+
+    Rules =
+        lists:foldl(
+          fun shu_parser:add_rules/2,
+          #{},
+          [{file, "INTEGER.RULES"},
+           <<"root(X): 整数(X, true), eof."/utf8>>]),
+
     Parse =
         fun (X) ->
                 [{term, root, [R]}] = shu_parser:parse(X, {root,1}, Rules, Symbols),
