@@ -1,39 +1,40 @@
-xmonad(M, X, Z): symbol(M, xmonad(X, Z)).
-ymonad(M, Y, Z): symbol(M, ymonad(Y, Z)).
-dyad(D, X, Y, Z): symbol(D, dyad(X, Y, Z)).
+无目(整数(N), 整数):
+  整数(N, true).
 
-xmonad(yapply(A, B), X, Z):
-  ymonad(A, dyad(X1, Y1, Z1), xmonad(X, Z)),
-  dyad(B, X1, Y1, Z1).
+无目(并列{A,B}, 数组(Z)):
+  无目(A, Z),
+  无目(B, Z).
 
-xmonad(yapply(A, B), X, Z):
-  ymonad(A, xmonad(X1, Z1), xmonad(X, Z)),
-  xmonad(B, X1, Z1).
+无目(并列{A,B}, 数组(Z)):
+  无目(A, 数组(Z)),
+  无目(B, Z).
 
-xmonad(fork(A, B, C), X, Z):
-  xmonad(A, X, X1),
-  dyad(B, X1, Y1, Z),
-  xmonad(C, X, Y1).
+泛左目(A, X, Z):
+  无目(A, Z).
 
-xmonad(ypartial(A, B), X, Z):
-  dyad(A, X, Y, Z),
-  xmonad(B, X, Y).
+泛左目(A, X, Z):
+  左目(A, X, Z).
 
-xseq(seq{A,B}, X, Z):
-  xseq(A, X, Y),
-  xseq(B, Y, Z).
+顺序(A, X, Z):
+  泛左目(A, X, Z).
 
-xseq(A, X, Z):
-  xmonad(A, X, Z).
+顺序(顺序(A,B), X, Z):
+  顺序(A, X, Y),
+  左目(B, Y, Z).
 
-dyad(xapply(B, A), X, Y, Z):
-  dyad(A, X1, Y1, Z1),
-  xmonad(B, dyad(X1,Y1,Z1), dyad(X,Y,Z)).
+左目(组合(A,B), X, Z):
+  右目(A, 双目(X1,Y1,Z1), 左目(X,Z)),
+  双目(B, X1,Y1,Z1).
 
-dyad(yapply(A, B), X, Y, Z):
-  ymonad(A, dyad(X1, Y, Z1), dyad(X, Y, Z)),
-  dyad(B, X1, Y, Z1).
+左目(组合(B,A,C), X, Z):
+  泛左目(A, X, Y1),
+  双目(B, Y1, Y2, Z),
+  泛左目(C, X, Y2).
 
-root(T, xseq(X, Z)):
-  xseq(T, X, Z),
+双目(组合(B,A), X1, Y1, Z1):
+  双目(A, X, Y, Z),
+  左目(B, 双目(X,Y,Z), 双目(X1,Y1,Z1)).
+
+root(T, Z):
+  顺序(T, 空, Z),
   eof.

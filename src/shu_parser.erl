@@ -92,13 +92,16 @@ parse(List, {F,_} = Root, Grammar, Symbols) ->
 
 
 format({tuple, Name, List}) ->
-    io_lib:format("~s{~s}", [Name, format_list(List)]);
+    io_lib:format("~ts{~ts}", [Name, format_list(List)]);
 format({term, Name, List}) ->
-    io_lib:format("~s(~s)", [Name, format_list(List)]);
+    io_lib:format("~ts(~ts)", [Name, format_list(List)]);
 format({var, Name}) ->
-    io_lib:format("~s", [Name]);
+    io_lib:format("~ts", [Name]);
 format(Atom) when is_atom(Atom) ->
-    io_lib:format("~s", [Atom]).
+    io_lib:format("~ts", [Atom]);
+format(Int) when is_integer(Int) ->
+    io_lib:format("~B", [Int]).
+
 
 format_list(List) ->
     string:join([format(T) || T <- List], ",").
