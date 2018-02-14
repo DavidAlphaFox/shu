@@ -1,10 +1,53 @@
--module(integer_tests).
+-module(shu_compile).
 
-eval({term, '乘', [A,B]}) ->
-    eval(A) * eval(B);
-eval({term, '加', [A,B]}) ->
-    eval(A) + eval(B);
-eval(X) when is_integer(X) ->
+-export([compile/1]).
+
+compile({tuple, '并列', A}) ->
+    Funs = [compile(T) || T <- A ],
+    fun (X) ->
+            [F(X) || F <- Funs]
+    end;
+compile({term, '顺序', [A,B]}) ->
+    A1 = compile(A),
+    B1 = compile(B),
+    fun(X) ->
+            B1(A1(X))
+    end;
+compile({term, '组合', [A,B]}) ->
+    A1 = compile(A),
+    B1 = compile(B),
+    A1(B1);
+compile({term, '组合', [A,B,C]}) ->
+    A1 = compile(A),
+    B1 = compile(B),
+    C1 = compile(C),
+    fun(X) ->
+            A1(B1(X),C1(X))
+    end;
+compile({term, '整数', [X]}) ->
+    Int = '整数'(X),
+    fun (_) -> Int end;
+compile({term, '左目', ['以']}) ->
+    fun(F) -> fun (X,Y) -> F(Y,X) end end;
+compile({term, '左目', ['项数']}) ->
+    fun length/1;
+compile({term, '右目', ['相']}) ->
+    fun (F) ->
+        fun([H|T]) ->
+                lists:foldl(F,H,T)
+        end
+    end;
+compile({term, '双目', ['加']}) ->
+    fun erlang:'+'/2;
+compile({term, '双目', ['除']}) ->
+    fun (X, Y) -> Y div X end.
+
+
+'整数'({term, '乘', [A,B]}) ->
+    '整数'(A) * '整数'(B);
+'整数'({term, '加', [A,B]}) ->
+    '整数'(A) + '整数'(B);
+'整数'(X) when is_integer(X) ->
     X.
 
 
@@ -14,21 +57,21 @@ eval(X) when is_integer(X) ->
 integer_test_() ->
     Symbols =
         lists:foldl(
-          fun shu_parser:add_symbols/2,
-          #{},
+          fun shu_symbols:add/2,
+          shu_symbols:new(),
           [{file, "INTEGER.SYMBOLS"}]),
 
     Rules =
         lists:foldl(
-          fun shu_parser:add_rules/2,
-          #{},
+          fun shu_rules:add/2,
+          shu_rules:new(),
           [{file, "INTEGER.RULES"},
            <<"root(X): 整数(X, true), eof."/utf8>>]),
 
     Parse =
         fun (X) ->
-                [{term, root, [R]}] = shu_parser:parse(X, {root,1}, Rules, Symbols),
-                eval(R)
+                [{term, root, [R]}] = shu_chart:parse(X, {root,1}, Rules, Symbols),
+                '整数'(R)
         end,
 
     [?_assertEqual(0, Parse("〇")),

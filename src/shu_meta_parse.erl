@@ -1,14 +1,7 @@
--module(shu_rule_parser).
+-module(shu_meta_parse).
 
--export([parse_rules/1, parse_symbols/1]).
+-export([tokens/1, rules/1, symbols/1]).
 
-parse_rules(Bin) ->
-    Tokens = tokens(Bin),
-    rules(Tokens).
-
-parse_symbols(Bin) ->
-    Tokens = tokens(Bin),
-    symbols(Tokens).
 
 tokens(<<>>) ->
     [];
@@ -78,6 +71,13 @@ literal(C, Bin) ->
     {S, Bin1} = literal(Bin),
     {[C|S], Bin1}.
 
+literal(<<C, Bin/binary>>)
+  when $a =< C, C =< $z;
+       $A =< C, C =< $Z;
+       $0 =< C, C =< $9;
+       C =:= $_ ->
+    {S, Bin1} = literal(Bin),
+    {[C|S], Bin1};
 literal(<<C/utf8, Bin/binary>>)
   when 128 =< C ->
     {S, Bin1} = literal(Bin),
@@ -159,14 +159,5 @@ tokens_test_() ->
      ?_assertEqual(['(',')',',','.',':','{','}'], Tokens("(),.:{}")),
      ?_assertEqual([{atom, atom}, {var, 'Var'}, {ignore, '_Ignore'}, {integer, 123}], Tokens("atom Var _Ignore 123"))
     ].
-
-parse_rules_test_() ->
-    Parse = fun(X) -> parse_rules(unicode:characters_to_binary(X)) end,
-    [?_assertEqual([{clause, {term,a,[{var,'X'}]}, [{term,b,[{var,'X'},{ignore,'_'},123]}]}], Parse("a(X) : b(X,_,123).")),
-     ?_assertEqual([{clause, {term,a,[{tuple, a, [a,{var,'X'}]}]}, [{term,b,[{var,'X'}]}]}], Parse("a(a{a,X}) : b(X)."))].
-
-parse_symbols_test_() ->
-    Parse = fun(X) -> parse_symbols(unicode:characters_to_binary(X)) end,
-    [?_assertEqual([{"多少", {term, symbol, [x, {term, t, [{var, 'V'}, {ignore, '_'}]}, 123]}}], Parse("多少 symbol(x, t(V,_), 123)"))].
 
 -endif.

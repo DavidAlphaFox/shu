@@ -8,22 +8,8 @@ all() ->
     [eunit].
 
 
-eunit(Config) ->
-    Datadir = ?config(data_dir, Config),
-    Privdir = ?config(priv_dir, Config),
-
-    Erls =
-        [ filename:join(Datadir, Name)
-          || Name <- filelib:wildcard("*.erl", Datadir) ],
-
-    up_to_date =
-        make:files(
-          Erls,
-          [{outdir, Privdir},
-           verbose,
-           {d, 'TEST'}]),
-
+eunit(_Config) ->
     ok =
         eunit:test(
-          [{dir, Privdir}, {application, shu}],
+          [{application, shu}],
           [verbose]).

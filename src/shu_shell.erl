@@ -10,15 +10,15 @@ server() ->
 
     Symbols =
         lists:foldl(
-          fun shu_parser:add_symbols/2,
-          #{},
+          fun shu_symbols:add/2,
+          shu_symbols:new(),
           [{file, "INTEGER.SYMBOLS"},
            {file, "SYMBOLS"}]),
 
     Rules =
         lists:foldl(
-          fun shu_parser:add_rules/2,
-          #{},
+          fun shu_rules:add/2,
+          shu_rules:new(),
           [{file, "INTEGER.RULES"},
            {file, "RULES"}]),
 
@@ -28,19 +28,20 @@ server_loop(Rules, Symbols) ->
     Prompt = prompt(),
     Line = io:get_line(Prompt),
 
-    case shu_parser:parse(
-           string:strip(Line, both, $\n),
+    case shu_chart:parse(
+           string:strip(Line, right, $\n),
            {root,2},
            Rules,
            Symbols)
     of
-        [{term, root, [R,T]}] ->
-            io:format("~ts ~tp~n", [shu_parser:format(R),T]);
+        [{term, root, [R,_]}] ->
+            F = shu_compile:compile(R),
+            io:format("~ts~p~n", ["答曰", F(nil)]);
         [] ->
             io:format("~ts~n", ["错误"]);
         Choices ->
             io:format("~ts~n", ["歧义"]),
-            [ io:format("  ~ts ~tp~n", [shu_parser:format(R),T])
+            [ io:format("  ~ts ~ts~n", [shu_term:format(R),shu_term:format(T)])
               || {term, root, [R,T]} <- Choices]
     end,
     server_loop(Rules, Symbols).

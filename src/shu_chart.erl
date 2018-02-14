@@ -1,6 +1,6 @@
 -module(shu_chart).
 
--export([new/2, complete/5]).
+-export([parse/4]).
 
 
 new(Root, Grammar) ->
@@ -80,3 +80,38 @@ complete(Chart = #{states := States}, I, Name, N, {Entry, Count}) ->
       end,
       Chart,
       maps:get(Name, maps:get(N, States, #{}), [])).
+
+
+parse(I, [], Chart, _Tables, _Symbols) ->
+    complete(Chart, I, {eof, 0}, I, {[], 0});
+parse(I, [H|T], Chart, Tables, Symbols) ->
+    Tables1 = [{I, Symbols}|Tables],
+
+    Tables2 =
+        [ {N,maps:get(H,Table)}
+          || {N,Table} <- Tables1,
+             maps:is_key(H, Table)],
+
+    Entries =
+        [ {N, Entry}
+          || {N,Table} <- Tables2,
+             Entry <- maps:get([],Table,[])],
+
+    Chart1 =
+        lists:foldl(
+          fun ({N, {Name,Entry}}, C) ->
+                  complete(C, I, Name, N, Entry)
+          end,
+          Chart,
+          Entries),
+
+    Tables3 =
+        [ {N,Table}
+          || {N,Table} <- Tables2,
+             maps:size(Table) > 0],
+
+    parse(I+1, T, Chart1, Tables3, Symbols).
+
+parse(List, {F,_} = Root, Grammar, Symbols) ->
+    #{results := Results} = parse(0, List, new(Root, Grammar), [], Symbols),
+    [ {term, F, Term} || {Term, _} <- maps:get(Root, maps:get(0, Results, #{}), [])].

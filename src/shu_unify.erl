@@ -1,7 +1,8 @@
 -module(shu_unify).
 
--export([unify/3, subst/2, reify/3, offset/2, alpha/1]).
-
+-export(
+   [unify/3, subst/2, reify/3,
+    offset/2, alpha/1]).
 
 lookup(K, []) ->
     {var, K};
