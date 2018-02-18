@@ -20,7 +20,8 @@ server() ->
           fun shu_rules:add/2,
           shu_rules:new(),
           [{file, "INTEGER.RULES"},
-           {file, "RULES"}]),
+           {file, "RULES"},
+           <<"root(X, T): 顺序(X, T), eof."/utf8>>]),
 
     server_loop(Rules, Symbols).
 
@@ -36,7 +37,7 @@ server_loop(Rules, Symbols) ->
     of
         [{term, root, [R,_]}] ->
             F = shu_compile:compile(R),
-            io:format("~ts~p~n", ["答曰", F(nil)]);
+            io:format("~ts~p~n", ["答曰", F()]);
         [] ->
             io:format("~ts~n", ["错误"]);
         Choices ->
